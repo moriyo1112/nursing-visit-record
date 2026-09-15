@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>訪問看護記録 v12</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 0.5rem;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .container {
+      max-width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .header {
+      background: #fff;
+      padding: 0.75rem;
+      border-radius: 6px;
+      border: 1px solid #e0e0e0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .header h1 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .header p {
+      font-size: 11px;
+      color: #666;
+      line-height: 1.3;
+    }
+
+    .section {
+      background: #fff;
+      padding: 0.75rem;
+      border-radius: 6px;
+      border: 1px solid #e0e0e0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .section-accent {
+      background: #f0f7ff;
+      border: 1px solid #b3d9ff;
+    }
+
+    .section h2 {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #333;
+    }
+
+    .section-accent h2 {
+      color: #0056b3;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-bottom: 0.5rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .grid-full {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    @media (min-width: 600px) {
+      .grid-2 {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .grid-3 {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    label {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 4px;
+      font-weight: 500;
+      display: block;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    input[type="datetime-local"],
+    select,
+    textarea {
+      padding: 0.6rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: inherit;
+      width: 100%;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="date"]:focus,
+    input[type="datetime-local"]:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #0056b3;
+      box-shadow: 0 0 0 3px rgba(0,86,179,0.1);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 70px;
+      font-family: inherit;
+    }
+
+    .checkbox-group {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      padding: 0.75rem;
+      background: #f9f9f9;
+      border-radius: 4px;
+      border: 1px solid #e0e0e0;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 0.25rem 0;
+    }
+
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    @media (min-width: 600px) {
+      .checkbox-group {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .meal-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid #eee;
+    }
+
+    .meal-info-label {
+      font-size: 11px;
+      color: #666;
+    }
+
+    .meal-info-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #0056b3;
+    }
+
+    .total-calories {
+      background: #f0f7ff;
+      padding: 1rem;
+      border-radius: 6px;
+      text-align: center;
+      border: 2px solid #0056b3;
+      margin: 1rem 0;
+    }
+
+    .total-calories-label {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 0.25rem;
+    }
+
+    .total-calories-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #0056b3;
+    }
+
+    .button-group {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 1rem;
+    }
+
+    button {
+      padding: 0.75rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+    }
+
+    @media (min-width: 600px) {
+      .button-group {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .btn-reset {
+      background: #f0f0f0;
+      color: #333;
+      border: 1px solid #ddd;
+    }
+
+    .btn-reset:hover {
+      background: #e0e0e0;
+    }
+
+    .btn-generate {
+      background: #0056b3;
+      color: white;
+    }
+
+    .btn-generate:hover {
+      background: #003d82;
+    }
+
+    .output-section {
+      display: none;
+      margin-top: 2rem;
+    }
+
+    .output-section.active {
+      display: block;
+    }
+
+    .output-text {
+      background: #f9f9f9;
+      padding: 1rem;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-bottom: 0.75rem;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .output-buttons {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .btn-output {
+      padding: 0.75rem;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      color: #333;
+      width: 100%;
+    }
+
+    @media (min-width: 600px) {
+      .output-buttons {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .btn-output:hover {
+      background: #f5f5f5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>訪問看護記録 v12</h1>
+      <p>患者情報・バイタル・食事・排尿排便・症状を記録し、職務記録に自動変換</p>
+    </div>
+
+    <!-- 患者情報 & 日時 -->
+    <div class="section">
+      <div class="grid-2">
+        <div class="form-group">
+          <label>患者名</label>
+          <input type="text" id="patientName" placeholder="例：田中太郎">
+        </div>
+        <div class="form-group">
+          <label>訪問日時</label>
+          <input type="datetime-local" id="visitDateTime">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>特別訪問看護指示書 開始日</label>
+          <input type="date" id="instructionStartDate">
+        </div>
+        <div class="form-group">
+          <label>特別訪問看護指示書 終了日</label>
+          <input type="date" id="instructionEndDate">
+        </div>
+      </div>
+    </div>
+
+    <!-- バイタルサイン -->
+    <div class="section section-accent">
+      <h2>バイタルサイン</h2>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>体温（℃）</label>
+          <input type="number" id="temp" step="0.1" placeholder="36.5">
+        </div>
+        <div class="form-group">
+          <label>脈拍（/分）</label>
+          <input type="number" id="pulse" placeholder="72">
+        </div>
+        <div class="form-group">
+          <label>血圧（収縮/拡張）</label>
+          <input type="text" id="bp" placeholder="120/80">
+        </div>
+        <div class="form-group">
+          <label>呼吸数（/分）</label>
+          <input type="number" id="respiration" placeholder="16">
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top: 1rem;">
+        <div class="form-group">
+          <label>不整脈の有無</label>
+          <select id="arrhythmia">
+            <option value="">未記入</option>
+            <option value="なし">なし</option>
+            <option value="あり">あり</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>SpO2（%）</label>
+          <input type="number" id="spo2" placeholder="98">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label>酸素使用の有無</label>
+          <select id="oxygenUse" onchange="toggleOxygenFields()">
+            <option value="未記入">未記入</option>
+            <option value="RA">RA（室内気）</option>
+            <option value="あり">酸素使用中</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="oxygenDetails" style="display: none;" class="grid-2">
+        <div class="form-group">
+          <label>酸素流量（L/min）</label>
+          <input type="number" id="oxygenFlow" placeholder="2" step="0.1">
+        </div>
+        <div class="form-group">
+          <label>使用物品</label>
+          <select id="oxygenDevice">
+            <option value="">選択</option>
+            <option value="鼻カニュラ">鼻カニュラ</option>
+            <option value="マスク">マスク</option>
+            <option value="オープンフェイスマスク">オープンフェイスマスク</option>
+            <option value="ハイフロー">ハイフロー</option>
+            <option value="リザーバーマスク">リザーバーマスク</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top: 1rem;">
+        <div class="form-group">
+          <label>肺雑音</label>
+          <select id="lungSound" onchange="toggleLungSoundDetail()">
+            <option value="">未記入</option>
+            <option value="なし">なし</option>
+            <option value="粗い呼吸音">粗い呼吸音</option>
+            <option value="バチバチ音">バチバチ音</option>
+            <option value="笛声音">笛声音</option>
+            <option value="その他">その他</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>エアー入り</label>
+          <select id="airTube">
+            <option value="">未記入</option>
+            <option value="良好">良好</option>
+            <option value="微弱">微弱</option>
+            <option value="不良">不良</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="lungSoundDetail" style="display: none; margin-top: 1rem;" class="form-group">
+        <label>肺雑音の詳細（その他の場合）</label>
+        <input type="text" id="lungSoundContent" placeholder="詳細を入力">
+      </div>
+
+      <div class="grid-2" style="margin-top: 1rem;">
+        <div class="form-group">
+          <label>顔色</label>
+          <select id="complexion">
+            <option value="">未記入</option>
+            <option value="良好">良好</option>
+            <option value="不良">不良</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>浮腫の有無</label>
+          <select id="edema">
+            <option value="">未記入</option>
+            <option value="なし">なし</option>
+            <option value="あり">あり</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top: 1rem;">
+        <label>浮腫の部位（ある場合）</label>
+        <input type="text" id="edemaLocation" placeholder="両下肢など">
+      </div>
+    </div>
+
+    <!-- 点滴・薬剤管理 -->
+    <div class="section">
+      <h2>点滴・薬剤管理</h2>
+
+      <div style="margin-bottom: 1.5rem;">
+        <h3 style="font-size: 13px; font-weight: 600; margin-bottom: 1rem; color: #333;">点滴・注射状況</h3>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>開始日</label>
+            <input type="date" id="ivStartDate">
+          </div>
+          <div class="form-group">
+            <label>終了予定日</label>
+            <input type="date" id="ivEndDate">
+          </div>
+        </div>
+        <div class="form-group" style="margin-top: 1rem;">
+          <label>実施状況</label>
+          <select id="ivStatus">
+            <option value="">未記入</option>
+            <option value="実施中">実施中</option>
+            <option value="以前実施">以前実施（終了）</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-top: 1rem;">
+          <label>点滴の種類（複数選択可）</label>
+          <div class="checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="ivType_solitaT1_500" value="ソリタT1号 500mL">
+              <span>ソリタT1号 500mL</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="ivType_solitaT2_500" value="ソリタT2号 500mL">
+              <span>ソリタT2号 500mL</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="ivType_solitaT3_500" value="ソリタT3号 500mL">
+              <span>ソリタT3号 500mL</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="ivType_enefeed_550" value="エネフリード 550mL">
+              <span>エネフリード 550mL</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="ivType_saline_500" value="生食 500mL">
+              <span>生食 500mL</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="ivType_saline_20" value="生食 20mL">
+              <span>生食 20mL</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="ivType_ceftriaxone_1g" value="セフトリアキソンナトリウム 1g">
+              <span>セフトリアキソンナトリウム 1g</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="ivType_ceftriaxone_2g" value="セフトリアキソンナトリウム 2g">
+              <span>セフトリアキソンナトリウム 2g</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="ivType_blood" value="輸血">
+              <span>輸血</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="ivType_other" value="その他">
+              <span>その他</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 style="font-size: 13px; font-weight: 600; margin-bottom: 1rem; color: #333;">薬剤管理</h3>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>薬剤内容</label>
+            <input type="text" id="medicationContent" placeholder="セフトリアキソンナトリウムなど">
+          </div>
+          <div class="form-group">
+            <label>薬剤変更日</label>
+            <input type="date" id="medChangeDate">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>セット日数</label>
+            <input type="number" id="medSetDays" placeholder="日数">
+          </div>
+          <div class="form-group">
+            <label>残薬数</label>
+            <input type="number" id="medRemaining" placeholder="数">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 食事 -->
+    <div class="section">
+      <h2>食事（朝・昼・夕・間食に分けて入力）</h2>
+      <p style="font-size: 12px; color: #666; margin-bottom: 1rem;">例：「米 100g、卵 2個、パン 100g」と一行に複数記入OK</p>
+
+      <div class="grid-full">
+        <div class="form-group">
+          <label>🌅 朝食</label>
+          <textarea id="breakfastInput" placeholder="米 100g、卵 2個、みそ汁 150mL、エンシュア 200mL"></textarea>
+          <div class="meal-info">
+            <span class="meal-info-label">計:</span>
+            <span class="meal-info-value" id="breakfastCal">0 kcal</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>☀️ 昼食</label>
+          <textarea id="lunchInput" placeholder="お粥 200g、鶏肉 100g、野菜 150g"></textarea>
+          <div class="meal-info">
+            <span class="meal-info-label">計:</span>
+            <span class="meal-info-value" id="lunchCal">0 kcal</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>🌙 夕食</label>
+          <textarea id="dinnerInput" placeholder="雑炊 250g、豆腐 150g、味噌汁 150mL"></textarea>
+          <div class="meal-info">
+            <span class="meal-info-label">計:</span>
+            <span class="meal-info-value" id="dinnerCal">0 kcal</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>🍪 間食</label>
+          <textarea id="snackInput" placeholder="バナナ 100g、ビスケット 50gなど"></textarea>
+          <div class="meal-info">
+            <span class="meal-info-label">計:</span>
+            <span class="meal-info-value" id="snackCal">0 kcal</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="total-calories">
+        <div class="total-calories-label">1日合計カロリー</div>
+        <div class="total-calories-value" id="totalCalories">0 kcal</div>
+      </div>
+
+      <div class="form-group">
+        <label>水分飲用量（mL）</label>
+        <input type="number" id="fluidIntake" placeholder="500">
+      </div>
+    </div>
+
+    <!-- 排尿・排便 -->
+    <div class="section">
+      <h2>排尿・排便</h2>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>排尿回数</label>
+          <input type="number" id="urinationTimes" placeholder="4">
+        </div>
+        <div class="form-group">
+          <label>尿量（mL）</label>
+          <input type="number" id="urineVolume" placeholder="300">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>尿色</label>
+          <select id="urineColor">
+            <option value="">未記入</option>
+            <option value="淡黄色">淡黄色</option>
+            <option value="黄色">黄色</option>
+            <option value="濃黄色">濃黄色</option>
+            <option value="褐色">褐色</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-3">
+        <div class="form-group">
+          <label>排便</label>
+          <select id="bm">
+            <option value="">未記入</option>
+            <option value="なし">なし</option>
+            <option value="あり">あり</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>排便回数</label>
+          <input type="number" id="bmTimes" placeholder="回数">
+        </div>
+        <div class="form-group">
+          <label>腸蠕動音</label>
+          <select id="bowelSound">
+            <option value="">未記入</option>
+            <option value="正常">正常</option>
+            <option value="亢進">亢進</option>
+            <option value="減弱">減弱</option>
+            <option value="消失">消失</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 症状 -->
+    <div class="section">
+      <h2>症状</h2>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>疼痛の有無</label>
+          <select id="pain">
+            <option value="">未記入</option>
+            <option value="なし">なし</option>
+            <option value="あり">あり</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>疼痛の程度</label>
+          <input type="text" id="painLevel" placeholder="軽度、中程度など">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>その他の症状（フリー入力）</label>
+        <textarea id="otherSymptoms" placeholder="浮腫、皮疹、倦怠感など観察した症状があれば記入"></textarea>
+      </div>
+    </div>
+
+    <!-- ボタン -->
+    <div class="button-group">
+      <button class="btn-reset" onclick="resetForm()">リセット</button>
+      <button class="btn-generate" onclick="generateRecord()">記録を生成</button>
+    </div>
+
+    <!-- 生成された記録 -->
+    <div class="section output-section" id="recordOutput">
+      <h2>生成された記録</h2>
+      <div class="output-text" id="recordText"></div>
+      <div class="output-buttons">
+        <button class="btn-output" onclick="copyRecord()">コピー</button>
+        <button class="btn-output" onclick="exportCSV()">CSV保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const foodDatabase = {
+      '米': { cal: 168, per: 100 },
+      'ご飯': { cal: 168, per: 100 },
+      'お粥': { cal: 71, per: 100 },
+      '雑炊': { cal: 62, per: 100 },
+      'パン': { cal: 265, per: 100 },
+      '食パン': { cal: 265, per: 100 },
+      'うどん': { cal: 95, per: 100 },
+      'そば': { cal: 132, per: 100 },
+      'パスタ': { cal: 131, per: 100 },
+      '卵': { cal: 151, per: 100 },
+      '豆腐': { cal: 55, per: 100 },
+      '納豆': { cal: 200, per: 100 },
+      '鶏肉': { cal: 165, per: 100 },
+      '豚肉': { cal: 271, per: 100 },
+      '牛肉': { cal: 317, per: 100 },
+      '魚': { cal: 100, per: 100 },
+      'サケ': { cal: 133, per: 100 },
+      'マグロ': { cal: 125, per: 100 },
+      '牛乳': { cal: 61, per: 100 },
+      'チーズ': { cal: 403, per: 100 },
+      'ヨーグルト': { cal: 59, per: 100 },
+      'バター': { cal: 717, per: 100 },
+      '油': { cal: 892, per: 100 },
+      'みそ汁': { cal: 30, per: 100 },
+      '味噌汁': { cal: 30, per: 100 },
+      'エンシュア': { cal: 100, per: 100 },
+      '野菜': { cal: 35, per: 100 },
+      'キャベツ': { cal: 23, per: 100 },
+      'トマト': { cal: 18, per: 100 },
+      'ニンジン': { cal: 37, per: 100 },
+      'ブロッコリー': { cal: 34, per: 100 },
+      'ほうれんそう': { cal: 20, per: 100 },
+      '果物': { cal: 60, per: 100 },
+      'バナナ': { cal: 86, per: 100 },
+      'りんご': { cal: 52, per: 100 },
+      'みかん': { cal: 46, per: 100 },
+      'いちご': { cal: 34, per: 100 },
+      'ぶどう': { cal: 59, per: 100 },
+      '大豆': { cal: 180, per: 100 },
+      '白菜': { cal: 13, per: 100 },
+      'ジャガイモ': { cal: 76, per: 100 },
+      'サツマイモ': { cal: 103, per: 100 },
+      'そうめん': { cal: 127, per: 100 },
+      'スパゲッティ': { cal: 131, per: 100 },
+      'オムレツ': { cal: 152, per: 100 },
+      'チャーハン': { cal: 196, per: 100 },
+      'コロッケ': { cal: 238, per: 100 },
+      'フライドポテト': { cal: 237, per: 100 },
+      'トンカツ': { cal: 356, per: 100 },
+      'から揚げ': { cal: 320, per: 100 },
+      'ハンバーグ': { cal: 274, per: 100 },
+      'ビスケット': { cal: 440, per: 100 }
+    };
+
+    function toggleOxygenFields() {
+      const oxygenUse = document.getElementById('oxygenUse').value;
+      const details = document.getElementById('oxygenDetails');
+      details.style.display = oxygenUse === 'あり' ? 'grid' : 'none';
+      if (oxygenUse !== 'あり') {
+        document.getElementById('oxygenFlow').value = '';
+        document.getElementById('oxygenDevice').value = '';
+      }
+    }
+
+    function toggleLungSoundDetail() {
+      const lungSound = document.getElementById('lungSound').value;
+      const detail = document.getElementById('lungSoundDetail');
+      detail.style.display = lungSound === 'その他' ? 'block' : 'none';
+      if (lungSound !== 'その他') {
+        document.getElementById('lungSoundContent').value = '';
+      }
+    }
+
+    function parseFood(text) {
+      const items = [];
+      const lines = text.split('\n').join(',').split(',');
+      for (let line of lines) {
+        line = line.trim();
+        if (!line) continue;
+        const match = line.match(/^(.+?)\s+(\d+(?:\.\d+)?)\s*(g|個|ml|mL|杯|本)?/);
+        if (match) {
+          const foodName = match[1].trim();
+          const amount = parseFloat(match[2]);
+          const unit = match[3] || 'g';
+          let grams = amount;
+          if (unit === '個') grams = foodName === '卵' ? amount * 50 : amount * 100;
+          else if (unit === 'ml' || unit === 'mL') grams = amount;
+          else if (unit === '杯') grams = amount * 150;
+          else if (unit === '本') grams = amount * 100;
+          items.push({ name: foodName, grams });
+        }
+      }
+      return items;
+    }
+
+    function calculateCalories(foodItems) {
+      let total = 0;
+      for (let item of foodItems) {
+        const foodData = foodDatabase[item.name] || { cal: 0, per: 100 };
+        total += Math.round((foodData.cal / foodData.per) * item.grams);
+      }
+      return total;
+    }
+
+    function updateMealCalories() {
+      const bf = calculateCalories(parseFood(document.getElementById('breakfastInput').value));
+      const ln = calculateCalories(parseFood(document.getElementById('lunchInput').value));
+      const dn = calculateCalories(parseFood(document.getElementById('dinnerInput').value));
+      const sn = calculateCalories(parseFood(document.getElementById('snackInput').value));
+      const total = bf + ln + dn + sn;
+      document.getElementById('breakfastCal').textContent = bf + ' kcal';
+      document.getElementById('lunchCal').textContent = ln + ' kcal';
+      document.getElementById('dinnerCal').textContent = dn + ' kcal';
+      document.getElementById('snackCal').textContent = sn + ' kcal';
+      document.getElementById('totalCalories').textContent = total + ' kcal';
+    }
+
+    document.getElementById('breakfastInput').addEventListener('input', updateMealCalories);
+    document.getElementById('lunchInput').addEventListener('input', updateMealCalories);
+    document.getElementById('dinnerInput').addEventListener('input', updateMealCalories);
+    document.getElementById('snackInput').addEventListener('input', updateMealCalories);
+
+    function getSelectedIVTypes() {
+      const selected = [];
+      document.querySelectorAll('input[id^="ivType_"]:checked').forEach(cb => {
+        selected.push(cb.value);
+      });
+      return selected;
+    }
+
+    function generateRecord() {
+      const patient = document.getElementById('patientName').value || '患者名未記入';
+      const dateTime = document.getElementById('visitDateTime').value;
+      let dateTimeStr = '日時未記入';
+      if (dateTime) {
+        const dt = new Date(dateTime);
+        const year = dt.getFullYear();
+        const month = String(dt.getMonth() + 1).padStart(2, '0');
+        const day = String(dt.getDate()).padStart(2, '0');
+        const hours = String(dt.getHours()).padStart(2, '0');
+        const minutes = String(dt.getMinutes()).padStart(2, '0');
+        dateTimeStr = `${year}-${month}-${day} ${hours}:${minutes}`;
+      }
+
+      let record = `【訪問看護記録】\n\n患者名：${patient}\n訪問日時：${dateTimeStr}\n`;
+
+      const instStart = document.getElementById('instructionStartDate').value;
+      const instEnd = document.getElementById('instructionEndDate').value;
+      if (instStart || instEnd) {
+        record += `特別訪問看護指示書：`;
+        if (instStart) record += `${instStart}`;
+        if (instStart && instEnd) record += ` ～ `;
+        if (instEnd) record += `${instEnd}`;
+        record += '\n';
+      }
+
+      record += '\n■ バイタルサイン\n';
+      const temp = document.getElementById('temp').value;
+      const pulse = document.getElementById('pulse').value;
+      const bp = document.getElementById('bp').value;
+      const resp = document.getElementById('respiration').value;
+      if (temp) record += `体温：${temp}℃\n`;
+      if (pulse) record += `脈拍：${pulse}/分\n`;
+      if (bp) record += `血圧：${bp}\n`;
+      if (resp) record += `呼吸数：${resp}/分\n`;
+
+      const arrhythmia = document.getElementById('arrhythmia').value;
+      if (arrhythmia) record += `不整脈：${arrhythmia}\n`;
+
+      const spo2 = document.getElementById('spo2').value;
+      const oxygenUse = document.getElementById('oxygenUse').value;
+      if (spo2 || oxygenUse) {
+        if (spo2) record += `SpO2：${spo2}%`;
+        if (oxygenUse === 'RA') record += ` (RA)\n`;
+        else if (oxygenUse === 'あり') {
+          const flow = document.getElementById('oxygenFlow').value;
+          const device = document.getElementById('oxygenDevice').value;
+          record += ` (O2 ${flow}L/min ${device})\n`;
+        } else record += '\n';
+      }
+
+      const lungSound = document.getElementById('lungSound').value;
+      if (lungSound) {
+        record += `肺雑音：${lungSound}`;
+        if (lungSound === 'その他') {
+          const content = document.getElementById('lungSoundContent').value;
+          if (content) record += `（${content}）`;
+        }
+        record += '\n';
+      }
+
+      const airTube = document.getElementById('airTube').value;
+      if (airTube) record += `エアー入り：${airTube}\n`;
+
+      const complexion = document.getElementById('complexion').value;
+      const edema = document.getElementById('edema').value;
+      if (complexion) record += `顔色：${complexion}\n`;
+      if (edema) {
+        record += `浮腫：${edema}`;
+        const edemaLoc = document.getElementById('edemaLocation').value;
+        if (edemaLoc) record += `（${edemaLoc}）`;
+        record += '\n';
+      }
+
+      record += '\n■ 点滴・薬剤管理\n';
+      const ivStartDate = document.getElementById('ivStartDate').value;
+      const ivEndDate = document.getElementById('ivEndDate').value;
+      const ivStatus = document.getElementById('ivStatus').value;
+      const selectedIVs = getSelectedIVTypes();
+      if (ivStartDate || ivEndDate || ivStatus || selectedIVs.length > 0) {
+        record += '【点滴・注射】\n';
+        if (ivStartDate || ivEndDate) {
+          record += `期間：`;
+          if (ivStartDate) record += `${ivStartDate}`;
+          if (ivStartDate && ivEndDate) record += ` ～ `;
+          if (ivEndDate) record += `${ivEndDate}`;
+          record += '\n';
+        }
+        if (ivStatus) record += `状況：${ivStatus}\n`;
+        if (selectedIVs.length > 0) record += `種類：${selectedIVs.join('、')}\n`;
+      }
+
+      const medContent = document.getElementById('medicationContent').value;
+      const medChangeDate = document.getElementById('medChangeDate').value;
+      const medSetDays = document.getElementById('medSetDays').value;
+      const medRemaining = document.getElementById('medRemaining').value;
+      if (medContent || medChangeDate || medSetDays || medRemaining) {
+        record += '【薬剤】\n';
+        if (medContent) record += `内容：${medContent}\n`;
+        if (medChangeDate) record += `変更日：${medChangeDate}\n`;
+        if (medSetDays) record += `セット日数：${medSetDays}日\n`;
+        if (medRemaining) record += `残薬数：${medRemaining}\n`;
+      }
+
+      record += '\n■ 食事・水分\n';
+      const bf = parseFood(document.getElementById('breakfastInput').value);
+      const ln = parseFood(document.getElementById('lunchInput').value);
+      const dn = parseFood(document.getElementById('dinnerInput').value);
+      const sn = parseFood(document.getElementById('snackInput').value);
+      if (bf.length > 0) record += `朝食：${bf.map(f => f.name + ' ' + f.grams + 'g').join('、')}（${calculateCalories(bf)}kcal）\n`;
+      if (ln.length > 0) record += `昼食：${ln.map(f => f.name + ' ' + f.grams + 'g').join('、')}（${calculateCalories(ln)}kcal）\n`;
+      if (dn.length > 0) record += `夕食：${dn.map(f => f.name + ' ' + f.grams + 'g').join('、')}（${calculateCalories(dn)}kcal）\n`;
+      if (sn.length > 0) record += `間食：${sn.map(f => f.name + ' ' + f.grams + 'g').join('、')}（${calculateCalories(sn)}kcal）\n`;
+      const totalCal = calculateCalories(bf) + calculateCalories(ln) + calculateCalories(dn) + calculateCalories(sn);
+      if (totalCal > 0) record += `1日合計：${totalCal}kcal\n`;
+      const fluidIntake = document.getElementById('fluidIntake').value;
+      if (fluidIntake) record += `水分摂取：${fluidIntake}mL\n`;
+
+      record += '\n■ 排尿・排便\n';
+      const urinationTimes = document.getElementById('urinationTimes').value;
+      const urineVolume = document.getElementById('urineVolume').value;
+      const urineColor = document.getElementById('urineColor').value;
+      if (urinationTimes) record += `排尿回数：${urinationTimes}回\n`;
+      if (urineVolume || urineColor) {
+        record += `尿：`;
+        if (urineVolume) record += `${urineVolume}mL`;
+        if (urineColor) record += `、${urineColor}`;
+        record += '\n';
+      }
+      const bm = document.getElementById('bm').value;
+      const bmTimes = document.getElementById('bmTimes').value;
+      const bowelSound = document.getElementById('bowelSound').value;
+      if (bm) {
+        record += `排便：${bm}`;
+        if (bmTimes && bm === 'あり') record += `（${bmTimes}回）`;
+        record += '\n';
+      }
+      if (bowelSound) record += `腸蠕動音：${bowelSound}\n`;
+
+      record += '\n■ 症状\n';
+      const pain = document.getElementById('pain').value;
+      const painLevel = document.getElementById('painLevel').value;
+      if (pain) {
+        record += `疼痛：${pain}`;
+        if (painLevel) record += `（${painLevel}）`;
+        record += '\n';
+      }
+      const otherSymptoms = document.getElementById('otherSymptoms').value;
+      if (otherSymptoms) record += `その他：${otherSymptoms}\n`;
+
+      document.getElementById('recordText').textContent = record;
+      document.getElementById('recordOutput').classList.add('active');
+    }
+
+    function resetForm() {
+      document.querySelectorAll('input, select, textarea').forEach(el => {
+        if (el.type === 'checkbox') el.checked = false;
+        else el.value = '';
+      });
+      document.getElementById('recordOutput').classList.remove('active');
+      document.getElementById('oxygenDetails').style.display = 'none';
+      document.getElementById('lungSoundDetail').style.display = 'none';
+      updateMealCalories();
+    }
+
+    function copyRecord() {
+      const text = document.getElementById('recordText').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('記録をコピーしました');
+      });
+    }
+
+    function exportCSV() {
+      const patient = document.getElementById('patientName').value || '患者名未記入';
+      const dateTime = document.getElementById('visitDateTime').value || '日時未記入';
+      const text = document.getElementById('recordText').textContent;
+      const csv = `患者名,訪問日時,記録\n"${patient}","${dateTime}","${text.replace(/"/g, '""')}"`;
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `訪問記録_${dateTime.split('T')[0]}_${patient}.csv`;
+      link.click();
+    }
+
+    // Set default datetime to now
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('visitDateTime').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+  </script>
+</body>
+</html>

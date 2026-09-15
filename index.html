@@ -794,7 +794,7 @@
       for (let line of lines) {
         line = line.trim();
         if (!line) continue;
-        const match = line.match(/^(.+?)\s+(\d+(?:\.\d+)?)\s*(g|個|ml|mL|杯|本)?/);
+        const match = line.match(/^(.+?)\s*(\d+(?:\.\d+)?)\s*(g|個|ml|mL|杯|本)?/);
         if (match) {
           const foodName = match[1].trim();
           const amount = parseFloat(match[2]);

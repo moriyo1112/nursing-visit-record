@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>訪問看護記録 v12</title>
+  <title>訪問看護記録 v13</title>
   <style>
     * {
       margin: 0;
@@ -227,6 +227,17 @@
       color: #0056b3;
     }
 
+    .unknown-foods {
+      display: none;
+      background: #fff4e5;
+      border: 1px solid #f0b060;
+      color: #8a4b00;
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-bottom: 1rem;
+    }
+
     .button-group {
       display: grid;
       grid-template-columns: 1fr;
@@ -325,7 +336,7 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>訪問看護記録 v12</h1>
+      <h1>訪問看護記録 v13</h1>
       <p>患者情報・バイタル・食事・排尿排便・症状を記録し、職務記録に自動変換</p>
     </div>
 
@@ -571,7 +582,7 @@
     <!-- 食事 -->
     <div class="section">
       <h2>食事（朝・昼・夕・間食に分けて入力）</h2>
-      <p style="font-size: 12px; color: #666; margin-bottom: 1rem;">例：「米 100g、卵 2個、パン 100g」と一行に複数記入OK</p>
+      <p style="font-size: 12px; color: #666; margin-bottom: 1rem;">例：「米 100g、卵 2個、エンシュア 1本」と一行に複数記入OK（単位：g・mL・個・本・杯・枚・切れ・パック・缶）</p>
 
       <div class="grid-full">
         <div class="form-group">
@@ -615,6 +626,7 @@
         <div class="total-calories-label">1日合計カロリー</div>
         <div class="total-calories-value" id="totalCalories">0 kcal</div>
       </div>
+      <div class="unknown-foods" id="unknownFoods"></div>
 
       <div class="form-group">
         <label>水分飲用量（mL）</label>
@@ -714,60 +726,182 @@
   </div>
 
   <script>
+    // cal: per(g または mL)あたりのカロリー
+    // units: 「1個」「1本」などの重さ(g/mL)。未指定の単位は defaultUnitGrams を使う
     const foodDatabase = {
-      '米': { cal: 168, per: 100 },
-      'ご飯': { cal: 168, per: 100 },
-      'お粥': { cal: 71, per: 100 },
+      // 主食
+      '米': { cal: 168, per: 100, units: { '杯': 150 } },
+      'ご飯': { cal: 168, per: 100, units: { '杯': 150 } },
+      'ごはん': { cal: 168, per: 100, units: { '杯': 150 } },
+      '軟飯': { cal: 113, per: 100, units: { '杯': 150 } },
+      'お粥': { cal: 71, per: 100, units: { '杯': 200 } },
+      '全粥': { cal: 65, per: 100, units: { '杯': 200 } },
+      '五分粥': { cal: 33, per: 100, units: { '杯': 200 } },
       '雑炊': { cal: 62, per: 100 },
+      'おにぎり': { cal: 170, per: 100, units: { '個': 100 } },
+      '餅': { cal: 223, per: 100, units: { '個': 50 } },
       'パン': { cal: 265, per: 100 },
-      '食パン': { cal: 265, per: 100 },
-      'うどん': { cal: 95, per: 100 },
-      'そば': { cal: 132, per: 100 },
+      '食パン': { cal: 265, per: 100, units: { '枚': 60 } },
+      'ロールパン': { cal: 309, per: 100, units: { '個': 30 } },
+      'クロワッサン': { cal: 406, per: 100, units: { '個': 40 } },
+      'うどん': { cal: 95, per: 100, units: { '杯': 250 } },
+      'そば': { cal: 132, per: 100, units: { '杯': 200 } },
+      'そうめん': { cal: 127, per: 100 },
+      'ラーメン': { cal: 149, per: 100 },
       'パスタ': { cal: 131, per: 100 },
-      '卵': { cal: 151, per: 100 },
+      'スパゲッティ': { cal: 131, per: 100 },
+      'オートミール': { cal: 350, per: 100 },
+      'コーンフレーク': { cal: 380, per: 100 },
+
+      // 卵・大豆製品
+      '卵': { cal: 151, per: 100, units: { '個': 50 } },
+      'ゆで卵': { cal: 134, per: 100, units: { '個': 50 } },
+      '卵焼き': { cal: 146, per: 100, units: { '切れ': 30 } },
+      'オムレツ': { cal: 152, per: 100 },
+      '茶碗蒸し': { cal: 79, per: 100, units: { '個': 150 } },
       '豆腐': { cal: 55, per: 100 },
-      '納豆': { cal: 200, per: 100 },
+      '絹ごし豆腐': { cal: 56, per: 100 },
+      '木綿豆腐': { cal: 73, per: 100 },
+      '厚揚げ': { cal: 143, per: 100 },
+      '油揚げ': { cal: 377, per: 100, units: { '枚': 20 } },
+      '納豆': { cal: 200, per: 100, units: { 'パック': 45 } },
+      '大豆': { cal: 180, per: 100 },
+      '豆乳': { cal: 44, per: 100, units: { '本': 200, '杯': 200 } },
+
+      // 肉
       '鶏肉': { cal: 165, per: 100 },
+      'ささみ': { cal: 98, per: 100, units: { '本': 50 } },
       '豚肉': { cal: 271, per: 100 },
       '牛肉': { cal: 317, per: 100 },
-      '魚': { cal: 100, per: 100 },
-      'サケ': { cal: 133, per: 100 },
+      'ひき肉': { cal: 230, per: 100 },
+      'ハム': { cal: 211, per: 100, units: { '枚': 10 } },
+      'ソーセージ': { cal: 319, per: 100, units: { '本': 20 } },
+      'ウインナー': { cal: 319, per: 100, units: { '本': 20 } },
+      'ベーコン': { cal: 400, per: 100, units: { '枚': 17 } },
+
+      // 魚
+      '魚': { cal: 100, per: 100, units: { '切れ': 80 } },
+      'サケ': { cal: 133, per: 100, units: { '切れ': 80 } },
+      '鮭': { cal: 133, per: 100, units: { '切れ': 80 } },
       'マグロ': { cal: 125, per: 100 },
-      '牛乳': { cal: 61, per: 100 },
-      'チーズ': { cal: 403, per: 100 },
-      'ヨーグルト': { cal: 59, per: 100 },
+      'サバ': { cal: 211, per: 100, units: { '切れ': 80 } },
+      'サンマ': { cal: 287, per: 100, units: { '本': 100 } },
+      'アジ': { cal: 112, per: 100, units: { '本': 70 } },
+      'タラ': { cal: 72, per: 100, units: { '切れ': 80 } },
+      'ブリ': { cal: 222, per: 100, units: { '切れ': 80 } },
+      'カレイ': { cal: 89, per: 100, units: { '切れ': 80 } },
+      'しらす': { cal: 113, per: 100 },
+      'ツナ缶': { cal: 265, per: 100, units: { '缶': 70 } },
+      'ちくわ': { cal: 119, per: 100, units: { '本': 30 } },
+      'かまぼこ': { cal: 93, per: 100, units: { '切れ': 10 } },
+      '刺身': { cal: 120, per: 100, units: { '切れ': 10 } },
+
+      // 乳製品
+      '牛乳': { cal: 61, per: 100, units: { '本': 200, '杯': 200 } },
+      'チーズ': { cal: 403, per: 100, units: { '個': 18, '枚': 18 } },
+      'ヨーグルト': { cal: 59, per: 100, units: { '個': 80 } },
       'バター': { cal: 717, per: 100 },
-      '油': { cal: 892, per: 100 },
-      'みそ汁': { cal: 30, per: 100 },
-      '味噌汁': { cal: 30, per: 100 },
-      'エンシュア': { cal: 100, per: 100 },
+
+      // 汁物
+      'みそ汁': { cal: 30, per: 100, units: { '杯': 150 } },
+      '味噌汁': { cal: 30, per: 100, units: { '杯': 150 } },
+      'スープ': { cal: 40, per: 100, units: { '杯': 150 } },
+      'コーンスープ': { cal: 62, per: 100, units: { '杯': 150 } },
+      '豚汁': { cal: 45, per: 100, units: { '杯': 180 } },
+
+      // 野菜・芋
       '野菜': { cal: 35, per: 100 },
       'キャベツ': { cal: 23, per: 100 },
-      'トマト': { cal: 18, per: 100 },
-      'ニンジン': { cal: 37, per: 100 },
+      'トマト': { cal: 18, per: 100, units: { '個': 150 } },
+      'ミニトマト': { cal: 29, per: 100, units: { '個': 10 } },
+      'ニンジン': { cal: 37, per: 100, units: { '本': 150 } },
       'ブロッコリー': { cal: 34, per: 100 },
       'ほうれんそう': { cal: 20, per: 100 },
-      '果物': { cal: 60, per: 100 },
-      'バナナ': { cal: 86, per: 100 },
-      'りんご': { cal: 52, per: 100 },
-      'みかん': { cal: 46, per: 100 },
-      'いちご': { cal: 34, per: 100 },
-      'ぶどう': { cal: 59, per: 100 },
-      '大豆': { cal: 180, per: 100 },
+      'ほうれん草': { cal: 20, per: 100 },
       '白菜': { cal: 13, per: 100 },
-      'ジャガイモ': { cal: 76, per: 100 },
-      'サツマイモ': { cal: 103, per: 100 },
-      'そうめん': { cal: 127, per: 100 },
-      'スパゲッティ': { cal: 131, per: 100 },
-      'オムレツ': { cal: 152, per: 100 },
-      'チャーハン': { cal: 196, per: 100 },
-      'コロッケ': { cal: 238, per: 100 },
+      '大根': { cal: 15, per: 100 },
+      '玉ねぎ': { cal: 33, per: 100, units: { '個': 200 } },
+      'きゅうり': { cal: 13, per: 100, units: { '本': 100 } },
+      'なす': { cal: 18, per: 100, units: { '本': 80 } },
+      'かぼちゃ': { cal: 78, per: 100 },
+      'レタス': { cal: 11, per: 100 },
+      'もやし': { cal: 15, per: 100 },
+      'サラダ': { cal: 20, per: 100 },
+      'ジャガイモ': { cal: 76, per: 100, units: { '個': 150 } },
+      'サツマイモ': { cal: 103, per: 100, units: { '本': 200 } },
+      '里芋': { cal: 53, per: 100, units: { '個': 50 } },
+
+      // 果物
+      '果物': { cal: 60, per: 100 },
+      'バナナ': { cal: 86, per: 100, units: { '本': 100 } },
+      'りんご': { cal: 52, per: 100, units: { '個': 250 } },
+      'みかん': { cal: 46, per: 100, units: { '個': 80 } },
+      'いちご': { cal: 34, per: 100, units: { '個': 15 } },
+      'ぶどう': { cal: 59, per: 100 },
+      '梨': { cal: 38, per: 100, units: { '個': 250 } },
+      '柿': { cal: 63, per: 100, units: { '個': 180 } },
+      'もも': { cal: 38, per: 100, units: { '個': 200 } },
+      'キウイ': { cal: 51, per: 100, units: { '個': 85 } },
+      'メロン': { cal: 40, per: 100 },
+      'すいか': { cal: 41, per: 100 },
+      '缶詰フルーツ': { cal: 80, per: 100 },
+
+      // おかず
+      'コロッケ': { cal: 238, per: 100, units: { '個': 80 } },
       'フライドポテト': { cal: 237, per: 100 },
-      'トンカツ': { cal: 356, per: 100 },
-      'から揚げ': { cal: 320, per: 100 },
-      'ハンバーグ': { cal: 274, per: 100 },
-      'ビスケット': { cal: 440, per: 100 }
+      'トンカツ': { cal: 356, per: 100, units: { '枚': 120 } },
+      'から揚げ': { cal: 320, per: 100, units: { '個': 30 } },
+      '唐揚げ': { cal: 320, per: 100, units: { '個': 30 } },
+      'ハンバーグ': { cal: 274, per: 100, units: { '個': 120 } },
+      'チャーハン': { cal: 196, per: 100 },
+      'カレー': { cal: 120, per: 100, units: { '杯': 200 } },
+      'シチュー': { cal: 100, per: 100, units: { '杯': 200 } },
+      '肉じゃが': { cal: 90, per: 100 },
+      '煮物': { cal: 80, per: 100 },
+      '焼き魚': { cal: 150, per: 100, units: { '切れ': 70 } },
+      '餃子': { cal: 200, per: 100, units: { '個': 25 } },
+      '天ぷら': { cal: 200, per: 100, units: { '個': 30 } },
+
+      // おやつ
+      'ビスケット': { cal: 440, per: 100, units: { '枚': 8 } },
+      'クッキー': { cal: 500, per: 100, units: { '枚': 8 } },
+      'プリン': { cal: 116, per: 100, units: { '個': 100 } },
+      'ゼリー': { cal: 70, per: 100, units: { '個': 100 } },
+      'アイスクリーム': { cal: 178, per: 100, units: { '個': 100 } },
+      'カステラ': { cal: 313, per: 100, units: { '切れ': 50 } },
+      'まんじゅう': { cal: 260, per: 100, units: { '個': 40 } },
+      '大福': { cal: 223, per: 100, units: { '個': 70 } },
+      'どら焼き': { cal: 292, per: 100, units: { '個': 80 } },
+      'ようかん': { cal: 289, per: 100, units: { '切れ': 50 } },
+      'せんべい': { cal: 368, per: 100, units: { '枚': 15 } },
+      'チョコレート': { cal: 550, per: 100, units: { '枚': 5 } },
+      'ケーキ': { cal: 300, per: 100, units: { '個': 100 } },
+
+      // 飲み物
+      'お茶': { cal: 0, per: 100, units: { '杯': 150 } },
+      '緑茶': { cal: 2, per: 100, units: { '杯': 150 } },
+      '麦茶': { cal: 1, per: 100, units: { '杯': 150 } },
+      '水': { cal: 0, per: 100, units: { '杯': 150 } },
+      'コーヒー': { cal: 4, per: 100, units: { '杯': 150 } },
+      '紅茶': { cal: 1, per: 100, units: { '杯': 150 } },
+      'ジュース': { cal: 45, per: 100, units: { '本': 200, '杯': 200 } },
+      'スポーツドリンク': { cal: 21, per: 100, units: { '本': 500 } },
+      '経口補水液': { cal: 10, per: 100, units: { '本': 500 } },
+      '乳酸菌飲料': { cal: 64, per: 100, units: { '本': 65 } },
+
+      // 栄養補助食品（製品により差があるため目安）
+      'エンシュア': { cal: 100, per: 100, units: { '本': 250, '缶': 250 } },
+      'エンシュアH': { cal: 150, per: 100, units: { '本': 250, '缶': 250 } },
+      'ラコール': { cal: 100, per: 100, units: { 'パック': 200 } },
+      'エネーボ': { cal: 120, per: 100, units: { '本': 250, '缶': 250 } },
+      'イノラス': { cal: 160, per: 100, units: { '本': 187.5, 'パック': 187.5 } },
+      'メイバランスミニ': { cal: 160, per: 100, units: { '本': 125 } },
+      'メイバランス': { cal: 100, per: 100, units: { '本': 200 } },
+      '濃厚流動食': { cal: 150, per: 100, units: { '本': 125 } }
     };
+
+    // 食品ごとの units に無い場合に使う単位の重さ(g/mL)
+    const defaultUnitGrams = { '個': 100, '杯': 150, '本': 100, '枚': 30, '切れ': 50, 'パック': 100, '缶': 200 };
 
     function toggleOxygenFields() {
       const oxygenUse = document.getElementById('oxygenUse').value;
@@ -788,26 +922,37 @@
       }
     }
 
+    function toHalfWidth(text) {
+      return text
+        .replace(/[０-９Ａ-Ｚａ-ｚ．]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+        .replace(/　/g, ' ');
+    }
+
     function parseFood(text) {
       const items = [];
-      const lines = text.split(/[,、\n]/);
+      const lines = toHalfWidth(text).split(/[,、\n]/);
       for (let line of lines) {
         line = line.trim();
         if (!line) continue;
-        const match = line.match(/^(.+?)\s*(\d+(?:\.\d+)?)\s*(g|個|ml|mL|杯|本)?/);
+        const match = line.match(/^(.+?)\s*(\d+(?:\.\d+)?)\s*(g|個|ml|mL|cc|杯|本|枚|切れ|切|パック|缶)?/);
         if (match) {
           const foodName = match[1].trim();
           const amount = parseFloat(match[2]);
-          const unit = match[3] || 'g';
+          let unit = match[3] || 'g';
+          if (unit === '切') unit = '切れ';
           let grams = amount;
-          if (unit === '個') grams = foodName === '卵' ? amount * 50 : amount * 100;
-          else if (unit === 'ml' || unit === 'mL') grams = amount;
-          else if (unit === '杯') grams = amount * 150;
-          else if (unit === '本') grams = amount * 100;
-          items.push({ name: foodName, grams });
+          if (unit in defaultUnitGrams) {
+            const foodUnits = (foodDatabase[foodName] && foodDatabase[foodName].units) || {};
+            grams = amount * (foodUnits[unit] || defaultUnitGrams[unit]);
+          }
+          items.push({ name: foodName, grams: Math.round(grams) });
         }
       }
       return items;
+    }
+
+    function getUnknownFoods(foodItems) {
+      return foodItems.filter(item => !foodDatabase[item.name]).map(item => item.name);
     }
 
     function calculateCalories(foodItems) {
@@ -830,6 +975,14 @@
       document.getElementById('dinnerCal').textContent = dn + ' kcal';
       document.getElementById('snackCal').textContent = sn + ' kcal';
       document.getElementById('totalCalories').textContent = total + ' kcal';
+
+      const unknown = [...new Set(['breakfastInput', 'lunchInput', 'dinnerInput', 'snackInput']
+        .flatMap(id => getUnknownFoods(parseFood(document.getElementById(id).value))))];
+      const warning = document.getElementById('unknownFoods');
+      warning.textContent = unknown.length > 0
+        ? `⚠ 未登録の食品（0 kcal で計算）：${unknown.join('、')}`
+        : '';
+      warning.style.display = unknown.length > 0 ? 'block' : 'none';
     }
 
     document.getElementById('breakfastInput').addEventListener('input', updateMealCalories);

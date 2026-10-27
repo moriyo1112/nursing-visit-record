@@ -148,6 +148,17 @@
       box-shadow: 0 0 0 3px rgba(0,86,179,0.1);
     }
 
+    .bp-inputs {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .bp-inputs span {
+      font-size: 16px;
+      color: #666;
+    }
+
     textarea {
       resize: vertical;
       min-height: 70px;
@@ -377,13 +388,34 @@
           <input type="number" id="pulse" placeholder="72">
         </div>
         <div class="form-group">
-          <label>血圧（収縮/拡張）</label>
-          <input type="text" id="bp" placeholder="120/80">
+          <label>血圧（収縮期/拡張期 mmHg）</label>
+          <div class="bp-inputs">
+            <input type="number" id="bpSystolic" placeholder="120">
+            <span>/</span>
+            <input type="number" id="bpDiastolic" placeholder="80">
+          </div>
         </div>
         <div class="form-group">
           <label>呼吸数（/分）</label>
           <input type="number" id="respiration" placeholder="16">
         </div>
+      </div>
+
+      <div class="form-group" style="margin-top: 1rem;">
+        <label>意識レベル（JCS）</label>
+        <select id="jcs">
+          <option value="">未記入</option>
+          <option value="0">0：意識清明</option>
+          <option value="I-1">I-1：だいたい清明だが、今ひとつはっきりしない</option>
+          <option value="I-2">I-2：見当識障害がある</option>
+          <option value="I-3">I-3：自分の名前・生年月日が言えない</option>
+          <option value="II-10">II-10：普通の呼びかけで容易に開眼する</option>
+          <option value="II-20">II-20：大きな声または体を揺さぶると開眼する</option>
+          <option value="II-30">II-30：痛み刺激を加えつつ呼びかけを繰り返すと辛うじて開眼する</option>
+          <option value="III-100">III-100：痛み刺激に対し、払いのける動作をする</option>
+          <option value="III-200">III-200：痛み刺激で少し手足を動かしたり顔をしかめる</option>
+          <option value="III-300">III-300：痛み刺激に反応しない</option>
+        </select>
       </div>
 
       <div class="grid-2" style="margin-top: 1rem;">
@@ -659,7 +691,7 @@
           </select>
         </div>
       </div>
-      <div class="grid-3">
+      <div class="grid-2">
         <div class="form-group">
           <label>排便</label>
           <select id="bm">
@@ -671,6 +703,18 @@
         <div class="form-group">
           <label>排便回数</label>
           <input type="number" id="bmTimes" placeholder="回数">
+        </div>
+        <div class="form-group">
+          <label>排便の性状</label>
+          <select id="bmCharacter">
+            <option value="">未記入</option>
+            <option value="兎糞状便">兎糞状便</option>
+            <option value="硬便">硬便</option>
+            <option value="普通便">普通便</option>
+            <option value="軟便">軟便</option>
+            <option value="泥状便">泥状便</option>
+            <option value="水様便">水様便</option>
+          </select>
         </div>
         <div class="form-group">
           <label>腸蠕動音</label>
@@ -999,9 +1043,19 @@
     }
 
     function generateRecord() {
-      const patient = document.getElementById('patientName').value || '患者名未記入';
-      const dateTime = document.getElementById('visitDateTime').value;
-      let dateTimeStr = '日時未記入';
+      const val = id => document.getElementById(id).value.trim();
+      // 中身のある項目だけを並べる。項目が1つもなければ見出しごと出さない
+      const blocks = [];
+      const addBlock = (title, lines) => {
+        if (lines.length > 0) blocks.push((title ? `■ ${title}\n` : '') + lines.join('\n'));
+      };
+      const period = (start, end) => [start, end].filter(Boolean).join(' ～ ');
+
+      // 基本情報
+      const basic = [];
+      const patient = val('patientName');
+      if (patient) basic.push(`患者名：${patient}`);
+      const dateTime = val('visitDateTime');
       if (dateTime) {
         const dt = new Date(dateTime);
         const year = dt.getFullYear();
@@ -1009,145 +1063,127 @@
         const day = String(dt.getDate()).padStart(2, '0');
         const hours = String(dt.getHours()).padStart(2, '0');
         const minutes = String(dt.getMinutes()).padStart(2, '0');
-        dateTimeStr = `${year}-${month}-${day} ${hours}:${minutes}`;
+        basic.push(`訪問日時：${year}-${month}-${day} ${hours}:${minutes}`);
       }
+      const instPeriod = period(val('instructionStartDate'), val('instructionEndDate'));
+      if (instPeriod) basic.push(`特別訪問看護指示書：${instPeriod}`);
+      addBlock('', basic);
 
-      let record = `【訪問看護記録】\n\n患者名：${patient}\n訪問日時：${dateTimeStr}\n`;
+      // バイタルサイン
+      const vital = [];
+      const temp = val('temp');
+      const pulse = val('pulse');
+      const bpSystolic = val('bpSystolic');
+      const bpDiastolic = val('bpDiastolic');
+      const resp = val('respiration');
+      if (temp) vital.push(`体温：${temp}℃`);
+      if (pulse) vital.push(`脈拍：${pulse}/分`);
+      if (bpSystolic || bpDiastolic) vital.push(`血圧：${bpSystolic || '-'}/${bpDiastolic || '-'}mmHg`);
+      if (resp) vital.push(`呼吸数：${resp}/分`);
 
-      const instStart = document.getElementById('instructionStartDate').value;
-      const instEnd = document.getElementById('instructionEndDate').value;
-      if (instStart || instEnd) {
-        record += `特別訪問看護指示書：`;
-        if (instStart) record += `${instStart}`;
-        if (instStart && instEnd) record += ` ～ `;
-        if (instEnd) record += `${instEnd}`;
-        record += '\n';
+      const jcs = val('jcs');
+      if (jcs) vital.push(`意識レベル：JCS ${jcs}`);
+
+      const arrhythmia = val('arrhythmia');
+      if (arrhythmia) vital.push(`不整脈：${arrhythmia}`);
+
+      const spo2 = val('spo2');
+      const oxygenUse = val('oxygenUse');
+      let oxygen = '';
+      if (oxygenUse === 'RA') oxygen = 'RA';
+      else if (oxygenUse === 'あり') {
+        const flow = val('oxygenFlow');
+        oxygen = ['O2', flow && `${flow}L/min`, val('oxygenDevice')].filter(Boolean).join(' ');
       }
+      if (spo2) vital.push(`SpO2：${spo2}%` + (oxygen ? ` (${oxygen})` : ''));
+      else if (oxygen) vital.push(`酸素：${oxygen}`);
 
-      record += '\n■ バイタルサイン\n';
-      const temp = document.getElementById('temp').value;
-      const pulse = document.getElementById('pulse').value;
-      const bp = document.getElementById('bp').value;
-      const resp = document.getElementById('respiration').value;
-      if (temp) record += `体温：${temp}℃\n`;
-      if (pulse) record += `脈拍：${pulse}/分\n`;
-      if (bp) record += `血圧：${bp}\n`;
-      if (resp) record += `呼吸数：${resp}/分\n`;
-
-      const arrhythmia = document.getElementById('arrhythmia').value;
-      if (arrhythmia) record += `不整脈：${arrhythmia}\n`;
-
-      const spo2 = document.getElementById('spo2').value;
-      const oxygenUse = document.getElementById('oxygenUse').value;
-      if (spo2 || oxygenUse) {
-        if (spo2) record += `SpO2：${spo2}%`;
-        if (oxygenUse === 'RA') record += ` (RA)\n`;
-        else if (oxygenUse === 'あり') {
-          const flow = document.getElementById('oxygenFlow').value;
-          const device = document.getElementById('oxygenDevice').value;
-          record += ` (O2 ${flow}L/min ${device})\n`;
-        } else record += '\n';
-      }
-
-      const lungSound = document.getElementById('lungSound').value;
+      const lungSound = val('lungSound');
       if (lungSound) {
-        record += `肺雑音：${lungSound}`;
-        if (lungSound === 'その他') {
-          const content = document.getElementById('lungSoundContent').value;
-          if (content) record += `（${content}）`;
-        }
-        record += '\n';
+        const content = lungSound === 'その他' ? val('lungSoundContent') : '';
+        vital.push(`肺雑音：${lungSound}` + (content ? `（${content}）` : ''));
       }
 
-      const airTube = document.getElementById('airTube').value;
-      if (airTube) record += `エアー入り：${airTube}\n`;
+      const airTube = val('airTube');
+      if (airTube) vital.push(`エアー入り：${airTube}`);
 
-      const complexion = document.getElementById('complexion').value;
-      const edema = document.getElementById('edema').value;
-      if (complexion) record += `顔色：${complexion}\n`;
-      if (edema) {
-        record += `浮腫：${edema}`;
-        const edemaLoc = document.getElementById('edemaLocation').value;
-        if (edemaLoc) record += `（${edemaLoc}）`;
-        record += '\n';
-      }
+      const complexion = val('complexion');
+      if (complexion) vital.push(`顔色：${complexion}`);
+      const edema = val('edema');
+      const edemaLoc = val('edemaLocation');
+      if (edema) vital.push(`浮腫：${edema}` + (edemaLoc ? `（${edemaLoc}）` : ''));
+      else if (edemaLoc) vital.push(`浮腫の部位：${edemaLoc}`);
+      addBlock('バイタルサイン', vital);
 
-      record += '\n■ 点滴・薬剤管理\n';
-      const ivStartDate = document.getElementById('ivStartDate').value;
-      const ivEndDate = document.getElementById('ivEndDate').value;
-      const ivStatus = document.getElementById('ivStatus').value;
+      // 点滴・薬剤管理
+      const med = [];
+      const ivLines = [];
+      const ivPeriod = period(val('ivStartDate'), val('ivEndDate'));
+      if (ivPeriod) ivLines.push(`期間：${ivPeriod}`);
+      const ivStatus = val('ivStatus');
+      if (ivStatus) ivLines.push(`状況：${ivStatus}`);
       const selectedIVs = getSelectedIVTypes();
-      if (ivStartDate || ivEndDate || ivStatus || selectedIVs.length > 0) {
-        record += '【点滴・注射】\n';
-        if (ivStartDate || ivEndDate) {
-          record += `期間：`;
-          if (ivStartDate) record += `${ivStartDate}`;
-          if (ivStartDate && ivEndDate) record += ` ～ `;
-          if (ivEndDate) record += `${ivEndDate}`;
-          record += '\n';
-        }
-        if (ivStatus) record += `状況：${ivStatus}\n`;
-        if (selectedIVs.length > 0) record += `種類：${selectedIVs.join('、')}\n`;
-      }
+      if (selectedIVs.length > 0) ivLines.push(`種類：${selectedIVs.join('、')}`);
+      if (ivLines.length > 0) med.push('【点滴・注射】', ...ivLines);
 
-      const medContent = document.getElementById('medicationContent').value;
-      const medChangeDate = document.getElementById('medChangeDate').value;
-      const medSetDays = document.getElementById('medSetDays').value;
-      const medRemaining = document.getElementById('medRemaining').value;
-      if (medContent || medChangeDate || medSetDays || medRemaining) {
-        record += '【薬剤】\n';
-        if (medContent) record += `内容：${medContent}\n`;
-        if (medChangeDate) record += `変更日：${medChangeDate}\n`;
-        if (medSetDays) record += `セット日数：${medSetDays}日\n`;
-        if (medRemaining) record += `残薬数：${medRemaining}\n`;
-      }
+      const drugLines = [];
+      const medContent = val('medicationContent');
+      const medChangeDate = val('medChangeDate');
+      const medSetDays = val('medSetDays');
+      const medRemaining = val('medRemaining');
+      if (medContent) drugLines.push(`内容：${medContent}`);
+      if (medChangeDate) drugLines.push(`変更日：${medChangeDate}`);
+      if (medSetDays) drugLines.push(`セット日数：${medSetDays}日`);
+      if (medRemaining) drugLines.push(`残薬数：${medRemaining}`);
+      if (drugLines.length > 0) med.push('【薬剤】', ...drugLines);
+      addBlock('点滴・薬剤管理', med);
 
-      record += '\n■ 食事・水分\n';
-      const bf = parseFood(document.getElementById('breakfastInput').value);
-      const ln = parseFood(document.getElementById('lunchInput').value);
-      const dn = parseFood(document.getElementById('dinnerInput').value);
-      const sn = parseFood(document.getElementById('snackInput').value);
-      if (bf.length > 0) record += `朝食：${bf.map(f => f.name + ' ' + f.grams + 'g').join('、')}（${calculateCalories(bf)}kcal）\n`;
-      if (ln.length > 0) record += `昼食：${ln.map(f => f.name + ' ' + f.grams + 'g').join('、')}（${calculateCalories(ln)}kcal）\n`;
-      if (dn.length > 0) record += `夕食：${dn.map(f => f.name + ' ' + f.grams + 'g').join('、')}（${calculateCalories(dn)}kcal）\n`;
-      if (sn.length > 0) record += `間食：${sn.map(f => f.name + ' ' + f.grams + 'g').join('、')}（${calculateCalories(sn)}kcal）\n`;
-      const totalCal = calculateCalories(bf) + calculateCalories(ln) + calculateCalories(dn) + calculateCalories(sn);
-      if (totalCal > 0) record += `1日合計：${totalCal}kcal\n`;
-      const fluidIntake = document.getElementById('fluidIntake').value;
-      if (fluidIntake) record += `水分摂取：${fluidIntake}mL\n`;
-
-      record += '\n■ 排尿・排便\n';
-      const urinationTimes = document.getElementById('urinationTimes').value;
-      const urineVolume = document.getElementById('urineVolume').value;
-      const urineColor = document.getElementById('urineColor').value;
-      if (urinationTimes) record += `排尿回数：${urinationTimes}回\n`;
-      if (urineVolume || urineColor) {
-        record += `尿：`;
-        if (urineVolume) record += `${urineVolume}mL`;
-        if (urineColor) record += `、${urineColor}`;
-        record += '\n';
+      // 食事・水分
+      const meal = [];
+      const meals = [
+        ['朝食', parseFood(document.getElementById('breakfastInput').value)],
+        ['昼食', parseFood(document.getElementById('lunchInput').value)],
+        ['夕食', parseFood(document.getElementById('dinnerInput').value)],
+        ['間食', parseFood(document.getElementById('snackInput').value)]
+      ];
+      let totalCal = 0;
+      for (const [name, foods] of meals) {
+        if (foods.length === 0) continue;
+        const cal = calculateCalories(foods);
+        totalCal += cal;
+        meal.push(`${name}：${foods.map(f => f.name + ' ' + f.grams + 'g').join('、')}（${cal}kcal）`);
       }
-      const bm = document.getElementById('bm').value;
-      const bmTimes = document.getElementById('bmTimes').value;
-      const bowelSound = document.getElementById('bowelSound').value;
-      if (bm) {
-        record += `排便：${bm}`;
-        if (bmTimes && bm === 'あり') record += `（${bmTimes}回）`;
-        record += '\n';
-      }
-      if (bowelSound) record += `腸蠕動音：${bowelSound}\n`;
+      if (totalCal > 0) meal.push(`1日合計：${totalCal}kcal`);
+      const fluidIntake = val('fluidIntake');
+      if (fluidIntake) meal.push(`水分摂取：${fluidIntake}mL`);
+      addBlock('食事・水分', meal);
 
-      record += '\n■ 症状\n';
-      const pain = document.getElementById('pain').value;
-      const painLevel = document.getElementById('painLevel').value;
-      if (pain) {
-        record += `疼痛：${pain}`;
-        if (painLevel) record += `（${painLevel}）`;
-        record += '\n';
-      }
-      const otherSymptoms = document.getElementById('otherSymptoms').value;
-      if (otherSymptoms) record += `その他：${otherSymptoms}\n`;
+      // 排尿・排便
+      const excretion = [];
+      const urinationTimes = val('urinationTimes');
+      if (urinationTimes) excretion.push(`排尿回数：${urinationTimes}回`);
+      const urine = [val('urineVolume') && `${val('urineVolume')}mL`, val('urineColor')].filter(Boolean);
+      if (urine.length > 0) excretion.push(`尿：${urine.join('、')}`);
 
+      const bm = val('bm');
+      const bmDetails = bm === 'なし' ? [] : [val('bmTimes') && `${val('bmTimes')}回`, val('bmCharacter')].filter(Boolean);
+      if (bmDetails.length > 0) excretion.push(`排便：${bm || 'あり'}（${bmDetails.join('、')}）`);
+      else if (bm) excretion.push(`排便：${bm}`);
+      const bowelSound = val('bowelSound');
+      if (bowelSound) excretion.push(`腸蠕動音：${bowelSound}`);
+      addBlock('排尿・排便', excretion);
+
+      // 症状
+      const symptoms = [];
+      const pain = val('pain');
+      const painLevel = val('painLevel');
+      if (pain) symptoms.push(`疼痛：${pain}` + (painLevel ? `（${painLevel}）` : ''));
+      else if (painLevel) symptoms.push(`疼痛の程度：${painLevel}`);
+      const otherSymptoms = val('otherSymptoms');
+      if (otherSymptoms) symptoms.push(`その他：${otherSymptoms}`);
+      addBlock('症状', symptoms);
+
+      const record = ['【訪問看護記録】', ...blocks].join('\n\n') + '\n';
       document.getElementById('recordText').textContent = record;
       document.getElementById('recordOutput').classList.add('active');
     }

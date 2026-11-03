@@ -752,6 +752,14 @@
       </div>
     </div>
 
+    <!-- 医師への指示依頼 -->
+    <div class="section section-accent">
+      <h2>医師への指示依頼</h2>
+      <div class="form-group">
+        <textarea id="doctorRequest" placeholder="例：発熱が続いているため、解熱剤の使用について指示をお願いします"></textarea>
+      </div>
+    </div>
+
     <!-- ボタン -->
     <div class="button-group">
       <button class="btn-reset" onclick="resetForm()">リセット</button>
@@ -1182,6 +1190,10 @@
       const otherSymptoms = val('otherSymptoms');
       if (otherSymptoms) symptoms.push(`その他：${otherSymptoms}`);
       addBlock('症状', symptoms);
+
+      // 医師への指示依頼（記録の最後に別枠で出す）
+      const doctorRequest = val('doctorRequest');
+      if (doctorRequest) addBlock('', ['━━━━━━━━━━━━━━', '【医師への指示依頼】', doctorRequest]);
 
       const record = ['【訪問看護記録】', ...blocks].join('\n\n') + '\n';
       document.getElementById('recordText').textContent = record;
